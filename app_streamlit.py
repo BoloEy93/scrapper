@@ -2,27 +2,9 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import json
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-import uvicorn
-
-st.set_page_config(
-    page_title="Page d'informations sur les ambulances (Ministère Santé Cameroun)",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'Get Help': 'https://minsante.cm/',
-        'Report a bug': None,
-        'About': "Cette application Streamlit récupère les résultats de recherche pour 'ambulance' sur le site du Ministère de la Santé du Cameroun et fournit un endpoint API pour accéder aux données JSON."
-    }
-)
-
-st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
-st.markdown("Actualité des Ambulances au Cameroun [Minsante](https://minsante.cm/site/?q=fr/search/node/ambulance)")
+from streamlit_server_state import server_state, get, post
 
 SEARCH_URL = "https://minsante.cm/site/?q=fr/search/node/ambulance"
-SCRAPED_DATA = None  # Global variable to store scraped data
 
 def scrape_search_results(url):
     try:
@@ -63,31 +45,33 @@ def scrape_search_results(url):
     except Exception as e:
         return {"error": f"Une erreur inattendue s'est produite: {e}"}
 
-# FastAPI application
-app = FastAPI()
+@server_state(initial={})
+def scraped_ambulance_data():
+    return {}
 
-@app.get("/api/ambulance_data")
-async def get_ambulance_data():
-    global SCRAPED_DATA
-    if SCRAPED_DATA is None or ("error" in SCRAPED_DATA):
-        # Scrape data if it hasn't been scraped yet or if there was an error
-        SCRAPED_DATA = scrape_search_results(SEARCH_URL)
-    return JSONResponse(content=SCRAPED_DATA, media_type="application/json; charset=utf-8")
+def fetch_and_store_data():
+    data = scrape_search_results(SEARCH_URL)
+    scraped_ambulance_data.set(data)
 
-if st.button("Récupérer et Afficher les résultats de recherche (Ambulance)"):
-    with st.spinner(f"Récupération des résultats depuis {SEARCH_URL}..."):
-        SCRAPED_DATA = scrape_search_results(SEARCH_URL)
-        st.subheader("Données JSON:")
-        st.code(json.dumps(SCRAPED_DATA, indent=4, ensure_ascii=False), language="json")
-        if not isinstance(SCRAPED_DATA, dict) or "error" not in SCRAPED_DATA:
-            st.download_button(
-                label="Télécharger les données JSON",
-                data=json.dumps(SCRAPED_DATA, indent=4, ensure_ascii=False),
-                file_name="minsante_ambulance_search_results.json",
-                mime="application/json",
-            )
-        else:
-            st.error(SCRAPED_DATA["error"])
+if not scraped_ambulance_data.get():
+    with st.spinner("Récupération initiale des données..."):
+        fetch_and_store_data()
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8502, workers=1)
+st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
+st.markdown("Récupération des résultats de recherche pour 'ambulance' depuis [https://minsante.cm/site/?q=fr/search/node/ambulance](https://minsante.cm/site/?q=fr/search/node/ambulance) et affichage au format JSON.")
+
+if st.button("Mettre à jour les données"):
+    with st.spinner("Mise à jour des données..."):
+        fetch_and_store_data()
+
+st.subheader("Données JSON:")
+st.code(json.dumps(scraped_ambulance_data.get(), indent=4, ensure_ascii=False), language="json")
+
+st.markdown("---")
+st.subheader("Accéder aux données via une requête GET:")
+st.markdown("Vous pouvez accéder aux données JSON directement en ajoutant `?api=1` à l'URL de cette application.")
+st.markdown("Par exemple: `votre_app_url.streamlitapp.com/?api=1`")
+
+# --- Handle API Request ---
+if st.experimental_get_query_params().get("api") == ["1"]:
+    st.json(scraped_ambulance_data.get())
