@@ -72,5 +72,5 @@ st.markdown("Vous pouvez accéder aux données JSON directement en ajoutant `?ap
 st.markdown("Par exemple: `votre_app_url.streamlitapp.com/?api=1`")
 
 # --- Handle API Request ---
-if st.experimental_get_query_params().get("api") == ["1"]:
-    st.json(st.session_state.scraped_ambulance_data)
+if st.query_params.get("api") == "1":
+    st.json(scraped_ambulance_data())
