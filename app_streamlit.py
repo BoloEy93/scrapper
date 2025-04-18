@@ -73,4 +73,4 @@ st.markdown("Par exemple: `votre_app_url.streamlitapp.com/?api=1`")
 
 # --- Handle API Request ---
 if st.query_params.get("api") == "1":
-    st.json(scraped_ambulance_data())
+    st.json(st.session_state.scraped_ambulance_data)
