@@ -1,5 +1,6 @@
 streamlit
 beautifulsoup4
 requests
+streamlit_server_state
 fastapi
 uvicorn
