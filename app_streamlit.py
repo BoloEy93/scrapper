@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 
 st.set_page_config(
-    page_title="Actualités OMS Cameroun (JSON)",
+    page_title="Actualités Santé -OMS Cameroun",
     page_icon="🌍",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -15,14 +15,19 @@ st.set_page_config(
     }
 )
 
-st.title("Actualités OMS Cameroun (Format JSON)")
-st.markdown("Récupération des dernières actualités du Cameroun depuis [https://www.afro.who.int/countries/cameroon/news](https://www.afro.who.int/countries/cameroon/news) et affichage au format JSON.")
+st.title("Actualités OMS Cameroun")
+st.markdown("Récupération des dernières actualités du Cameroun depuis [https://www.afro.who.int/countries/cameroon/news](https://www.afro.who.int/countries/cameroon/news)")
 
 NEWS_URL = "https://www.afro.who.int/countries/cameroon/news"
 
-def scrape_news(url):
+# Add a User-Agent header to mimic a web browser
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+}
+
+def scrape_news(url, headers):
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         news_container = soup.find('div', class_='view-content')
@@ -61,7 +66,7 @@ def scrape_news(url):
 
 if st.button("Récupérer les actualités au format JSON"):
     with st.spinner(f"Récupération des actualités depuis {NEWS_URL}..."):
-        news_data = scrape_news(NEWS_URL)
+        news_data = scrape_news(NEWS_URL, headers)
         st.subheader("Données JSON:")
         st.code(json.dumps(news_data, indent=4), language="json")
         st.download_button(
