@@ -90,12 +90,4 @@ if st.button("Récupérer et Afficher les résultats de recherche (Ambulance)"):
             st.error(SCRAPED_DATA["error"])
 
 if __name__ == "__main__":
-    import threading
-
-    def run_streamlit():
-        st.run(__file__)
-
-    streamlit_thread = threading.Thread(target=run_streamlit)
-    streamlit_thread.start()
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, workers=1)
