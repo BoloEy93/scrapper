@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import json
-from streamlit_server_state import server_state, get, post
+from streamlit_server_state import server_state
 
 SEARCH_URL = "https://minsante.cm/site/?q=fr/search/node/ambulance"
 
@@ -53,7 +53,7 @@ def fetch_and_store_data():
     data = scrape_search_results(SEARCH_URL)
     scraped_ambulance_data.set(data)
 
-if not scraped_ambulance_data.get():
+if not scraped_ambulance_data():
     with st.spinner("Récupération initiale des données..."):
         fetch_and_store_data()
 
@@ -65,7 +65,7 @@ if st.button("Mettre à jour les données"):
         fetch_and_store_data()
 
 st.subheader("Données JSON:")
-st.code(json.dumps(scraped_ambulance_data.get(), indent=4, ensure_ascii=False), language="json")
+st.code(json.dumps(scraped_ambulance_data(), indent=4, ensure_ascii=False), language="json")
 
 st.markdown("---")
 st.subheader("Accéder aux données via une requête GET:")
@@ -74,4 +74,4 @@ st.markdown("Par exemple: `votre_app_url.streamlitapp.com/?api=1`")
 
 # --- Handle API Request ---
 if st.experimental_get_query_params().get("api") == ["1"]:
-    st.json(scraped_ambulance_data.get())
+    st.json(scraped_ambulance_data())
