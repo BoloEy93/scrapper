@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import json
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+import uvicorn
 
 st.set_page_config(
     page_title="Page d'informations sur les ambulances (Ministère Santé Cameroun)",
@@ -11,14 +14,15 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://minsante.cm/',
         'Report a bug': None,
-        'About': "Cette application Streamlit récupère les résultats de recherche pour 'ambulance' sur le site du Ministère de la Santé du Cameroun et les affiche au format JSON."
+        'About': "Cette application Streamlit récupère les résultats de recherche pour 'ambulance' sur le site du Ministère de la Santé du Cameroun et fournit un endpoint API pour accéder aux données JSON."
     }
 )
 
 st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
-st.markdown("Récupération des résultats de recherche pour 'ambulance' depuis [https://minsante.cm/site/?q=fr/search/node/ambulance](https://minsante.cm/site/?q=fr/search/node/ambulance) et affichage au format JSON.")
+st.markdown("Actualité des Ambulances au Cameroun [Minsante](https://minsante.cm/site/?q=fr/search/node/ambulance)")
 
 SEARCH_URL = "https://minsante.cm/site/?q=fr/search/node/ambulance"
+SCRAPED_DATA = None  # Global variable to store scraped data
 
 def scrape_search_results(url):
     try:
@@ -59,17 +63,39 @@ def scrape_search_results(url):
     except Exception as e:
         return {"error": f"Une erreur inattendue s'est produite: {e}"}
 
-if st.button("Récupérer les résultats de recherche (Ambulance) au format JSON"):
+# FastAPI application
+app = FastAPI()
+
+@app.get("/api/ambulance_data")
+async def get_ambulance_data():
+    global SCRAPED_DATA
+    if SCRAPED_DATA is None or ("error" in SCRAPED_DATA):
+        # Scrape data if it hasn't been scraped yet or if there was an error
+        SCRAPED_DATA = scrape_search_results(SEARCH_URL)
+    return JSONResponse(content=SCRAPED_DATA, media_type="application/json; charset=utf-8")
+
+if st.button("Récupérer et Afficher les résultats de recherche (Ambulance)"):
     with st.spinner(f"Récupération des résultats depuis {SEARCH_URL}..."):
-        search_results = scrape_search_results(SEARCH_URL)
+        SCRAPED_DATA = scrape_search_results(SEARCH_URL)
         st.subheader("Données JSON:")
-        st.code(json.dumps(search_results, indent=4, ensure_ascii=False), language="json")
-        if not isinstance(search_results, dict) or "error" not in search_results:
+        st.code(json.dumps(SCRAPED_DATA, indent=4, ensure_ascii=False), language="json")
+        if not isinstance(SCRAPED_DATA, dict) or "error" not in SCRAPED_DATA:
             st.download_button(
                 label="Télécharger les données JSON",
-                data=json.dumps(search_results, indent=4, ensure_ascii=False),
+                data=json.dumps(SCRAPED_DATA, indent=4, ensure_ascii=False),
                 file_name="minsante_ambulance_search_results.json",
                 mime="application/json",
             )
         else:
-            st.error(search_results["error"])
+            st.error(SCRAPED_DATA["error"])
+
+if __name__ == "__main__":
+    import threading
+
+    def run_streamlit():
+        st.run(__file__)
+
+    streamlit_thread = threading.Thread(target=run_streamlit)
+    streamlit_thread.start()
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
