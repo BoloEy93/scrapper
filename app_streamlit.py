@@ -45,7 +45,7 @@ def scrape_search_results(url):
     except Exception as e:
         return {"error": f"Une erreur inattendue s'est produite: {e}"}
 
-@server_state(initial=[])
+@server_state
 def scraped_ambulance_data():
     return []
 
