@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 
 st.set_page_config(
-    page_title="Résultats de recherche d'ambulances (Ministère Santé Cameroun)",
+    page_title="Page d'informations sur les ambulances (Ministère Santé Cameroun)",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -15,7 +15,7 @@ st.set_page_config(
     }
 )
 
-st.title("Résultats de recherche d'ambulances (Ministère Santé Cameroun) - Format JSON")
+st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
 st.markdown("Récupération des résultats de recherche pour 'ambulance' depuis [https://minsante.cm/site/?q=fr/search/node/ambulance](https://minsante.cm/site/?q=fr/search/node/ambulance) et affichage au format JSON.")
 
 SEARCH_URL = "https://minsante.cm/site/?q=fr/search/node/ambulance"
@@ -25,7 +25,7 @@ def scrape_search_results(url):
         response = requests.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
-        results_container = soup.find('div', class_='view-content')
+        results_container = soup.find('div', class_='content')
         results_data = []
 
         if results_container:
@@ -36,7 +36,7 @@ def scrape_search_results(url):
                 link = "https://minsante.cm" + title_element.a['href'] if title_element and title_element.a and 'href' in title_element.a.attrs else None
                 date_element = item.find('span', class_='date')
                 date = date_element.text.strip() if date_element else None
-                body_element = item.find('div', class_='field-content')
+                body_element = item.find('div', class_='search-snippet-info')
                 body = body_element.text.strip() if body_element else None
 
                 result_item = {
