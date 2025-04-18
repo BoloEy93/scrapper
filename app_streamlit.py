@@ -56,21 +56,21 @@ if not st.session_state.scraped_ambulance_data:
     with st.spinner("Récupération initiale des données..."):
         fetch_and_store_data()
 
-st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
-st.markdown("Récupération des résultats de recherche pour 'ambulance' depuis [https://minsante.cm/site/?q=fr/search/node/ambulance](https://minsante.cm/site/?q=fr/search/node/ambulance) et affichage.")
+# Extract the full URL path
+query_params = st.experimental_get_query_params()
 
-if st.button("Mettre à jour les données"):
-    with st.spinner("Mise à jour des données..."):
-        fetch_and_store_data()
-
-st.subheader("Données JSON:")
-st.code(json.dumps(st.session_state.scraped_ambulance_data, indent=4, ensure_ascii=False), language="json")
-
-st.markdown("---")
-st.subheader("Accéder aux données via une requête GET:")
-st.markdown("Vous pouvez accéder aux données JSON directement en ajoutant `?api=1` à l'URL de cette application.")
-st.markdown("Par exemple: `votre_app_url.streamlitapp.com/?api=1`")
-
-# --- Handle API Request ---
-if st.query_params.get("api") == "1":
+# Check if the user is accessing the 'ambulance_data' path
+if "ambulance_data" in st.experimental_get_query_params():
+    # Serve JSON data directly
     st.json(st.session_state.scraped_ambulance_data)
+else:
+    # Default Streamlit app view
+    st.title("Page d'information sur les ambulances (Ministère Santé Cameroun)")
+    st.markdown("Récupération des résultats de recherche pour 'ambulance' depuis [https://minsante.cm](https://minsante.cm).")
+
+    if st.button("Mettre à jour les données"):
+        with st.spinner("Mise à jour des données..."):
+            fetch_and_store_data()
+
+    st.subheader("Données JSON:")
+    st.code(json.dumps(st.session_state.scraped_ambulance_data, indent=4, ensure_ascii=False), language="json")
